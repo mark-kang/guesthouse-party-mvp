@@ -22,6 +22,11 @@ export default function PartyDashboard() {
 
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
+  // Modal states for MVP Demo
+  const [activeModal, setActiveModal] = useState<'like' | 'message' | 'song' | null>(null);
+  const [targetUser, setTargetUser] = useState('');
+  const [messageContent, setMessageContent] = useState('');
+  const [songTitle, setSongTitle] = useState('');
   useEffect(() => {
     const savedNickname = localStorage.getItem('party_nickname');
     const savedUserId = localStorage.getItem('party_user_id');
@@ -72,18 +77,7 @@ export default function PartyDashboard() {
     setTimeout(() => setToastMessage(null), 3000);
   };
 
-  const handleSendLike = async () => {
-    // Fake send like to random top user
-    const target = leaderboard[0];
-    showToast(`'${target.name}'님에게 호감을 보냈습니다!`);
-    
-    // In real app, we insert to DB. Here we just simulate for demo if DB isn't strictly enforced
-    try {
-      await supabase.from('interactions').insert([
-        { sender_id: userId, receiver_id: 'fake-id', type: 'like' }
-      ]);
-    } catch(e) {}
-  };
+  // Removed fake send like to use Modal flow
 
   return (
     <div className="min-h-screen flex flex-col pb-24 relative">
@@ -166,7 +160,7 @@ export default function PartyDashboard() {
       <div className="fixed bottom-6 left-0 w-full px-6 z-30">
         <div className="bg-slate-800/90 backdrop-blur-xl border border-slate-700 rounded-full p-2 flex justify-between shadow-2xl">
           <button 
-            onClick={handleSendLike}
+            onClick={() => { setActiveModal('like'); setTargetUser(''); }}
             className="flex-1 flex flex-col items-center py-2 text-pink-500 hover:bg-slate-700/50 rounded-full transition"
           >
             <Heart size={24} />
@@ -174,7 +168,7 @@ export default function PartyDashboard() {
           </button>
           
           <button 
-            onClick={() => showToast('쪽지 기능은 준비중입니다.')}
+            onClick={() => { setActiveModal('message'); setTargetUser(''); setMessageContent(''); }}
             className="flex-1 flex flex-col items-center py-2 text-cyan-400 hover:bg-slate-700/50 rounded-full transition"
           >
             <MessageSquare size={24} />
@@ -182,7 +176,7 @@ export default function PartyDashboard() {
           </button>
           
           <button 
-            onClick={() => showToast('신청곡이 DJ에게 전달되었습니다.')}
+            onClick={() => { setActiveModal('song'); setSongTitle(''); }}
             className="flex-1 flex flex-col items-center py-2 text-purple-400 hover:bg-slate-700/50 rounded-full transition"
           >
             <Music size={24} />
@@ -190,6 +184,103 @@ export default function PartyDashboard() {
           </button>
         </div>
       </div>
+
+      {/* Modals for Interactions */}
+      {activeModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 flex items-center justify-center p-4">
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="bg-slate-800 border border-slate-700 w-full max-w-sm rounded-2xl p-6 shadow-2xl relative"
+          >
+            <button 
+              onClick={() => setActiveModal(null)} 
+              className="absolute top-4 right-4 text-slate-400 hover:text-white"
+            >
+              ✕
+            </button>
+
+            {activeModal === 'like' && (
+              <>
+                <h3 className="text-xl font-bold flex items-center mb-4"><Heart className="mr-2 text-pink-500"/> 호감 보내기</h3>
+                <p className="text-sm text-slate-400 mb-4">마음에 드는 분에게 호감을 표현하세요! (익명 가능)</p>
+                <select 
+                  value={targetUser}
+                  onChange={(e) => setTargetUser(e.target.value)}
+                  className="w-full bg-slate-900 border border-slate-700 p-3 rounded-xl mb-6 focus:ring-2 focus:ring-pink-500 outline-none"
+                >
+                  <option value="">대상을 선택하세요</option>
+                  {leaderboard.map(u => <option key={u.name} value={u.name}>{u.name}</option>)}
+                </select>
+                <button 
+                  onClick={() => {
+                    if(!targetUser) return showToast('대상을 선택해주세요.');
+                    showToast(`'${targetUser}'님에게 💘호감을 성공적으로 보냈습니다!`);
+                    setActiveModal(null);
+                  }}
+                  className="w-full bg-gradient-to-r from-pink-600 to-pink-500 hover:from-pink-500 hover:to-pink-400 text-white font-bold py-3 rounded-xl transition shadow-lg"
+                >
+                  호감 보내기
+                </button>
+              </>
+            )}
+
+            {activeModal === 'message' && (
+              <>
+                <h3 className="text-xl font-bold flex items-center mb-4"><MessageSquare className="mr-2 text-cyan-400"/> 쪽지 발송</h3>
+                <select 
+                  value={targetUser}
+                  onChange={(e) => setTargetUser(e.target.value)}
+                  className="w-full bg-slate-900 border border-slate-700 p-3 rounded-xl mb-4 focus:ring-2 focus:ring-cyan-500 outline-none"
+                >
+                  <option value="">받을 사람을 선택하세요</option>
+                  {leaderboard.map(u => <option key={u.name} value={u.name}>{u.name}</option>)}
+                </select>
+                <textarea
+                  value={messageContent}
+                  onChange={(e) => setMessageContent(e.target.value)}
+                  placeholder="상대에게 전할 짧은 메시지..."
+                  className="w-full bg-slate-900 border border-slate-700 p-3 rounded-xl mb-6 h-28 resize-none focus:ring-2 focus:ring-cyan-500 outline-none"
+                ></textarea>
+                <button 
+                  onClick={() => {
+                    if(!targetUser || !messageContent) return showToast('대상과 메시지를 입력해주세요.');
+                    showToast(`'${targetUser}'님에게 💌쪽지를 전송했습니다!`);
+                    setActiveModal(null);
+                  }}
+                  className="w-full bg-gradient-to-r from-cyan-600 to-cyan-500 hover:from-cyan-500 hover:to-cyan-400 text-white font-bold py-3 rounded-xl transition shadow-lg"
+                >
+                  쪽지 발송
+                </button>
+              </>
+            )}
+
+            {activeModal === 'song' && (
+              <>
+                <h3 className="text-xl font-bold flex items-center mb-4"><Music className="mr-2 text-purple-400"/> 노래 신청하기</h3>
+                <p className="text-sm text-slate-400 mb-4">듣고 싶은 노래가 있나요? DJ 관리자에게 신청해 보세요🎶</p>
+                <input
+                  type="text"
+                  value={songTitle}
+                  onChange={(e) => setSongTitle(e.target.value)}
+                  placeholder="예: 뉴진스 - Hype Boy"
+                  className="w-full bg-slate-900 border border-slate-700 p-3 rounded-xl mb-6 focus:ring-2 focus:ring-purple-500 outline-none"
+                />
+                <button 
+                  onClick={() => {
+                    if(!songTitle) return showToast('노래 제목을 적어주세요.');
+                    showToast(`DJ에게 '${songTitle}' 🎧신청이 접수되었습니다!`);
+                    setActiveModal(null);
+                  }}
+                  className="w-full bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-500 hover:to-purple-400 text-white font-bold py-3 rounded-xl transition shadow-lg"
+                >
+                  DJ에게 신청하기
+                </button>
+              </>
+            )}
+          </motion.div>
+        </div>
+      )}
 
       {/* Toast Notification */}
       {toastMessage && (
