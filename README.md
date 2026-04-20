@@ -1,36 +1,58 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Guesthouse Party MVP 🎉
 
-## Getting Started
+게스트하우스에서 주최하는 파티 참석자 간 원활한 소통과 이벤트 진행 편의성을 위한 실시간 소통 반응형 웹 데모(MVP)입니다.
 
-First, run the development server:
+## 🎯 프로젝트 배경 및 목표
+본 프로젝트는 파티 참석자들이 QR 코드를 통해 전용 페이지에 접속하여, 실시간으로 메시지를 주고받고 호감도를 표현하는 등 쌍방향 상호작용을 돕기 위해 기획되었습니다. 이를 통해 파티의 재미(Gamification)를 극대화하고, 관리자는 파티 현황을 효율적으로 파악할 수 있는 현대적인 시스템을 구축합니다.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+---
+
+## 🏗️ 기술 아키텍처 및 기술 스택
+클라이언트 시연과 몰입감 있는 라이브 서비스 경험을 충족하기 위해 빠르고 강력한 모던 웹 스택을 선정했습니다.
+
+### 1. Frontend: **Next.js 14 (App Router) + Tailwind CSS**
+- **기능과 UI의 결합**: 클라이언트 중심의 동적인 반응형 웹(Mobile-first)을 효율적으로 구성하기 위해 Next.js의 App Router 방식을 채택했습니다.
+- **다이내믹 인터페이스**: `framer-motion`과 `lucide-react`를 도입하여 네온 톤앤매너의 파티 감성과 역동적인 실시간 알림 애니메이션을 생동감 있게 표현합니다.
+
+### 2. Backend & Database: **Supabase**
+- **Realtime Database**: 서버/인프라 구축 시간을 최소화하고 프론트엔드 중심으로 빠르게 MVP를 뽑아내기 위해 Supabase(PostgreSQL 기반)를 도입했습니다.
+- **웹소켓(WebSocket) 내장**: 호감도나 쪽지 등 상호작용이 일어나는 순간 사용자 화면에 즉각적으로 데이터(랭킹, Toast Alert 등)가 동기화되는 와우 포인트(Wow Factor)를 매우 쉽게 달성할 수 있습니다.
+
+### 3. Deployment: **Vercel**
+- 코드 푸시와 동시에 글로벌 CDN을 통해 제로 설정으로 배포되어 빠른 테스트와 수정을 반복할 수 있습니다.
+
+---
+
+## ✨ 핵심 데모 기능 (MVP 구성)
+
+현재 MVP 프로토타입에 다음과 같은 핵심 기능이 구현되어 있습니다.
+
+1. **QR 파티 입장 프로세스 (`/app/page.tsx`)**
+   - 사용자 닉네임을 설정하고 로컬 스토리지 및 데이터베이스를 통해 가상의 파티 세션으로 입장합니다.
+2. **실시간 파티 대시보드 (`/app/party/page.tsx`)**
+   - **라이브 랭킹**: 다른 유저 간의 호감도 랭킹 변화를 실시간(Supabase Realtime)으로 구독하여 화면상에 반영합니다.
+   - **내 현황판 (개인화 정보)**: 자신이 받은 좋아요(호감) 수, 큐피트 전송 가능 횟수 등을 직관적으로 보여줍니다.
+   - **상호작용 버튼**: 하단 네비게이션을 통해 호감 발송, 쪽지, 노래 신청 플로우를 모방할 수 있습니다. 호감 발송 시 화면 상단에 즉각적인 인터랙션 알림(Toast)이 발생합니다.
+
+---
+
+## 🚀 로컬 실행 방법 (How to Run)
+
+레포지토리를 클론하고 환경 변수를 세팅하여 로컬에서 라이브 서버를 구동해 볼 수 있습니다.
+
+### 1. 환경 변수 세팅
+프로젝트 루트 경로에 `.env.local` 파일을 생성하고 아래의 Supabase 인증 정보를 기입합니다.
+```env
+NEXT_PUBLIC_SUPABASE_URL=https://jmtehtsdqlwkbxidsjch.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=당신의_SUPABASE_ANON_KEY
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 2. 의존성 설치 및 실행
+```bash
+npm install
+npm run dev
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### 3. 모바일 화면 테스트
+- 접속 URL: `http://localhost:3000`
+- 크롬 브라우저 개발자 도구의 '장치 툴바 전환(Device Toggle)' 모드를 켜서 **iPhone(가로 해상도 375px 내외)** 비율로 뷰포트를 설정한 후 확인하시면 파티 앱 디자인의 100%를 경험하실 수 있습니다.
