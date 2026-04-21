@@ -16,6 +16,7 @@ export default function PartyDashboard() {
   const [myStats, setMyStats] = useState({ likes: 0, messages: 0, cupids: 0 });
   const [users, setUsers] = useState<any[]>([]);
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
+  const [likeCounts, setLikeCounts] = useState<Record<string, number>>({});
 
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [globalNotice, setGlobalNotice] = useState<string | null>(null);
@@ -57,17 +58,28 @@ export default function PartyDashboard() {
         }
       }
 
-      // 3. 임시 리더보드 (원래는 집계 쿼리를 써야하지만 데모용이므로 users 중 일부 렌더링)
-      if (uData) {
-        setLeaderboard(uData.slice(0, 3).map(u => ({ id: u.id, name: u.nickname, count: Math.floor(Math.random() * 10) + 1 })).sort((a,b)=>b.count - a.count));
+      // 3. 전체 호감 데이터 로드 (리더보드용)
+      const { data: allLikes } = await supabase.from('interactions').select('receiver_id').eq('type', 'like');
+      if (allLikes) {
+        const counts: Record<string, number> = {};
+        allLikes.forEach(l => {
+          counts[l.receiver_id] = (counts[l.receiver_id] || 0) + 1;
+        });
+        setLikeCounts(counts);
       }
     };
     loadInitialData();
 
-    // Realtime 구독
+    // Realtime 구독 전에 리더보드 계산 효과 적용
+
     const channel = supabase.channel('party_dashboard')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'interactions' }, (payload) => {
         const { receiver_id, type } = payload.new;
+        
+        if (type === 'like') {
+          setLikeCounts(prev => ({ ...prev, [receiver_id]: (prev[receiver_id] || 0) + 1 }));
+        }
+
         if (receiver_id === savedUserId) {
           if (type === 'like') {
             setMyStats(prev => ({ ...prev, likes: prev.likes + 1 }));
@@ -93,6 +105,20 @@ export default function PartyDashboard() {
       supabase.removeChannel(channel);
     };
   }, [router]);
+
+  useEffect(() => {
+    if (users.length > 0) {
+      const board = users.map(u => ({
+        id: u.id,
+        name: u.nickname,
+        count: likeCounts[u.id] || 0
+      }))
+      .filter(u => u.count > 0)
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 3);
+      setLeaderboard(board);
+    }
+  }, [users, likeCounts]);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -272,7 +298,11 @@ export default function PartyDashboard() {
                     className="w-full bg-slate-900 border border-slate-700 p-3 rounded-xl mb-6 focus:ring-2 focus:ring-pink-500 outline-none"
                   >
                     <option value="">대상을 선택하세요</option>
-                    {users.filter(u => u.id !== userId).map(u => <option key={u.id} value={u.id}>{u.nickname}</option>)}
+                    {users.filter(u => u.id !== userId).length === 0 ? (
+                      <option value="" disabled>현재 접속 중인 다른 유저가 없습니다</option>
+                    ) : (
+                      users.filter(u => u.id !== userId).map(u => <option key={u.id} value={u.id}>{u.nickname}</option>)
+                    )}
                   </select>
                   <button 
                     onClick={handleInteractionSubmit}
@@ -292,7 +322,11 @@ export default function PartyDashboard() {
                     className="w-full bg-slate-900 border border-slate-700 p-3 rounded-xl mb-4 focus:ring-2 focus:ring-cyan-500 outline-none"
                   >
                     <option value="">받을 사람을 선택하세요</option>
-                    {users.filter(u => u.id !== userId).map(u => <option key={u.id} value={u.id}>{u.nickname}</option>)}
+                    {users.filter(u => u.id !== userId).length === 0 ? (
+                      <option value="" disabled>현재 접속 중인 다른 유저가 없습니다</option>
+                    ) : (
+                      users.filter(u => u.id !== userId).map(u => <option key={u.id} value={u.id}>{u.nickname}</option>)
+                    )}
                   </select>
                   <textarea
                     value={messageContent}

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { PartyPopper } from 'lucide-react';
@@ -8,8 +8,14 @@ import { supabase } from '@/utils/supabase';
 
 export default function Home() {
   const [nickname, setNickname] = useState('');
+  const [savedNickname, setSavedNickname] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+
+  useEffect(() => {
+    const sn = localStorage.getItem('party_nickname');
+    if (sn) setSavedNickname(sn);
+  }, []);
 
   const handleJoin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -17,8 +23,27 @@ export default function Home() {
 
     setLoading(true);
     
-    // Insert user into Supabase
     try {
+      const cachedNickname = localStorage.getItem('party_nickname');
+      // 기존 본인 닉네임이라면 중복 체크+삽입 생략하고 바로 입장
+      if (nickname.trim() === cachedNickname) {
+        router.push('/party');
+        return;
+      }
+
+      // 1. Check for duplicate nickname
+      const { data: existingUsers, error: checkError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('nickname', nickname.trim());
+
+      if (existingUsers && existingUsers.length > 0) {
+        alert('이미 사용 중인 닉네임입니다. 다른 닉네임을 입력해주세요.');
+        setLoading(false);
+        return;
+      }
+
+      // 2. Insert user into Supabase
       const { data, error } = await supabase
         .from('users')
         .insert([{ nickname: nickname.trim() }])
@@ -68,9 +93,12 @@ export default function Home() {
           <input
             type="text"
             value={nickname}
-            onChange={(e) => setNickname(e.target.value)}
+            onChange={(e) => {
+              if (e.target.value.length <= 8) {
+                setNickname(e.target.value);
+              }
+            }}
             placeholder="닉네임 (최대 8자)"
-            maxLength={8}
             className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-4 text-center text-lg focus:outline-none focus:ring-2 focus:ring-pink-500 transition shadow-inner"
             required
           />
@@ -85,6 +113,18 @@ export default function Home() {
             {loading ? '입장 중...' : '파티 입장하기'}
           </motion.button>
         </form>
+
+        {savedNickname && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-4 text-center w-full">
+            <p className="text-slate-400 text-sm mb-3">기존 파티 참석 기록이 있습니다.</p>
+            <button 
+              onClick={() => router.push('/party')}
+              className="w-full bg-slate-800 border border-slate-700 hover:bg-slate-700 text-white font-medium py-3 rounded-xl transition"
+            >
+              <span className="text-cyan-400 font-bold">{savedNickname}</span> (으)로 계속하기
+            </button>
+          </motion.div>
+        )}
       </motion.div>
       
       {/* Background decoration elements */}
