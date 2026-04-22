@@ -298,10 +298,10 @@ export default function PartyDashboard() {
                     className="w-full bg-slate-900 border border-slate-700 p-3 rounded-xl mb-6 focus:ring-2 focus:ring-pink-500 outline-none"
                   >
                     <option value="">대상을 선택하세요</option>
-                    {users.filter(u => u.id !== userId).length === 0 ? (
+                    {users.filter(u => u.id !== userId && u.nickname !== nickname).length === 0 ? (
                       <option value="" disabled>현재 접속 중인 다른 유저가 없습니다</option>
                     ) : (
-                      users.filter(u => u.id !== userId).map(u => <option key={u.id} value={u.id}>{u.nickname}</option>)
+                      users.filter(u => u.id !== userId && u.nickname !== nickname).map(u => <option key={u.id} value={u.id}>{u.nickname}</option>)
                     )}
                   </select>
                   <button 
@@ -322,10 +322,10 @@ export default function PartyDashboard() {
                     className="w-full bg-slate-900 border border-slate-700 p-3 rounded-xl mb-4 focus:ring-2 focus:ring-cyan-500 outline-none"
                   >
                     <option value="">받을 사람을 선택하세요</option>
-                    {users.filter(u => u.id !== userId).length === 0 ? (
+                    {users.filter(u => u.id !== userId && u.nickname !== nickname).length === 0 ? (
                       <option value="" disabled>현재 접속 중인 다른 유저가 없습니다</option>
                     ) : (
-                      users.filter(u => u.id !== userId).map(u => <option key={u.id} value={u.id}>{u.nickname}</option>)
+                      users.filter(u => u.id !== userId && u.nickname !== nickname).map(u => <option key={u.id} value={u.id}>{u.nickname}</option>)
                     )}
                   </select>
                   <textarea
